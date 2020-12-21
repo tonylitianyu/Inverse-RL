@@ -23,7 +23,7 @@ class GridEnv(gym.Env):
 
     def __init__(self):
         self.action = [UP, DOWN, LEFT, RIGHT]
-        self.action_space = spaces.Discrete(5)
+        self.action_space = spaces.Discrete(4)
         self.action_grid_change = {UP:[-1,0],DOWN:[1,0], LEFT:[0,-1],RIGHT:[0,1]}
 
         self.state_space = spaces.Box(low=0, high=3, shape=[GRID_SIZE,GRID_SIZE,3])
@@ -44,7 +44,11 @@ class GridEnv(gym.Env):
         self.visual = False
 
 
-        self.policy = np.array([[RIGHT,RIGHT,RIGHT,DOWN],[RIGHT,RIGHT,RIGHT,DOWN],[RIGHT,RIGHT,RIGHT,DOWN],[RIGHT,RIGHT,RIGHT,RIGHT]])
+        #self.policy = np.array([[RIGHT,RIGHT,RIGHT,DOWN],[RIGHT,RIGHT,RIGHT,DOWN],[RIGHT,RIGHT,RIGHT,DOWN],[RIGHT,RIGHT,RIGHT,LEFT]])
+        self.policy = np.array([[RIGHT,RIGHT,RIGHT,DOWN],[DOWN,RIGHT,DOWN,DOWN],[DOWN,RIGHT,DOWN,DOWN],[RIGHT,RIGHT,RIGHT,DOWN]])
+
+
+        self.grid_size = GRID_SIZE
 
 
 
@@ -110,6 +114,19 @@ class GridEnv(gym.Env):
     def close(self):
         pass
 
+    def transition_prob(self,iy,ix,action, jy,jx):
+        next_agent_pos = [iy+self.action_grid_change[action][0],
+                            ix+self.action_grid_change[action][1]]
+
+        if next_agent_pos == [jy,jx]:
+            return 1.0
+        else:
+            return 0.0
+        
+
+
+
+
     def set_state_pos(self, update_pos, target_name):
         self.curr_state[update_pos[0]][update_pos[1]] = target_name
 
@@ -130,8 +147,7 @@ class GridEnv(gym.Env):
 
 
 
-    def value_iteration(self):
-        gamma = 0.9
+    def value_iteration(self, gamma):
         V = np.zeros((GRID_SIZE,GRID_SIZE))
         for q in range(0,20):
             for i in range(0,len(self.curr_state)):
@@ -165,6 +181,36 @@ class GridEnv(gym.Env):
                     V[i][j] = max_reward+gamma*V[max_y][max_x]
         
         return V
+
+    def generate_policy(self, V, gamma):
+        opti_policy = np.zeros((GRID_SIZE,GRID_SIZE))
+        for i in range(0,len(self.curr_state)):
+            for j in range(0,len(self.curr_state[0])):
+                if i == self.goal_pos[0] and j == self.goal_pos[1]:
+                    opti_policy[i][j] = RIGHT
+                    continue
+
+                neighbor_vals = {}
+                for k in self.action:
+                    neighbor_y = i+self.action_grid_change[k][0]
+                    neighbor_x = j+self.action_grid_change[k][1]
+                    reward = self.get_reward([neighbor_y,neighbor_x])
+                    
+                    if neighbor_y < 0 or neighbor_y >= len(V):
+                        continue
+                    if neighbor_x < 0 or neighbor_x >= len(V[0]):
+                        continue
+                    
+                    neighbor_val = V[neighbor_y][neighbor_x]
+                    value = reward+gamma*neighbor_val
+                    neighbor_vals[k] = value
+
+                max_value_action = max(neighbor_vals, key=neighbor_vals.get)
+                opti_policy[i][j] = max_value_action
+        self.policy = np.array(opti_policy, dtype=int)
+        return opti_policy
+
+                
 
                 
 

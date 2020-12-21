@@ -29,15 +29,20 @@ def draw_3d_hist(data):
 env = gym.make('gridworld-v0')
 env.visual = True
 env.render()
-# v = env.value_iteration()
+print(env.policy)
+
+v = env.value_iteration(0.9)
+pi = env.generate_policy(v,0.9)
+print(pi)
 
 # print(v)
-# r_data = get_reward_arr(env)
-# draw_3d_hist(r_data)
+#r_data = get_reward_arr(env)
+#draw_3d_hist(r_data)
 
-irl = IRL_LP(4,4, env.policy,0.9)
-irl.solve()
-
+irl = IRL_LP(env,0.9)
+irl_result = irl.solve()
+print(irl_result)
+draw_3d_hist(irl_result)
 
 
 for i in range(1):

@@ -6,14 +6,36 @@ from cvxopt import matrix, solvers
 
 class IRL_LP:
 
-    def __init__(self, grid_size, action_size, policy, gamma,l1=1.1, max_reward=1.0):
-        self.N_STATES = grid_size*grid_size
-        self.N_ACTIONS = action_size
+    def __init__(self, env, gamma,l1=10.1, max_reward=1.0):
+        self.env = env
+        self.N_STATES = env.grid_size*env.grid_size
+        self.N_ACTIONS = len(env.action)
+
         self.p = np.ones((self.N_STATES,self.N_STATES, self.N_ACTIONS))#!!!!!!!!!!!!!!!!
-        self.policy = policy.flatten()
+        self.build_transition_dynamics()
+
+        self.policy = env.policy.flatten()
         self.gamma = gamma
         self.l1 = l1
         self.max_reward = max_reward
+
+
+    def build_transition_dynamics(self):
+
+        for i in range(self.N_STATES):
+            for j in range(self.N_STATES):
+                for a in range(self.N_ACTIONS):
+                    iy, ix = self.flatToXY(i)
+                    jy, jx = self.flatToXY(j)
+                    self.p[i][j][a] = self.env.transition_prob(iy,ix,a,jy,jx)
+
+    def flatToXY(self, i):
+        
+        y = int(i/self.env.grid_size)
+        x = int(i%self.env.grid_size)
+
+        return y, x
+
 
 
     def build_c_mat(self):
@@ -46,6 +68,7 @@ class IRL_LP:
         return matrix(b), b
 
     def build_A_mat(self):
+        print(self.policy)
         print(self.p[0, :, self.policy[0]])
         T_array = []
         I_array = []
@@ -69,7 +92,7 @@ class IRL_LP:
         A_l = np.vstack([T_s, T_s, -I_s, I_s, -I_s, I_s])
 
         I_suboptimal = np.vstack(I_array)
-        print(I_suboptimal)
+
 
         A_m_zero_top = np.zeros((self.N_STATES*(self.N_ACTIONS-1), self.N_STATES))
         A_m_zero_mid_btm = np.zeros((self.N_STATES, self.N_STATES))
@@ -97,10 +120,11 @@ class IRL_LP:
 
         rewards = np.array(soln["x"][:self.N_STATES])
 
-        # rewards_norm = np.linalg.norm(rewards)
-        # rewards = (rewards/rewards_norm)*self.max_reward
+        rewards_norm = np.linalg.norm(rewards)
+        rewards = np.array((rewards/rewards_norm)*self.max_reward)
 
-        print(rewards)
+
+        return rewards.reshape((4,4))
 
 
 
