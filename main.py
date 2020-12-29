@@ -26,9 +26,10 @@ def plot_reward_surface(reward):
 
 env = gym.make('gridworld-v0')
 env.visual = True
-env.render()
+
 
 #optimal policy calculated by value iteration
+print("optimal policy calculated by value iteration")
 v = env.value_iteration(0.9)
 print(v)
 pi, pi_visual = env.generate_policy(v,0.9)
@@ -36,20 +37,26 @@ print(pi)
 print(pi_visual)
 
 
-
+#recover reward from IRL
 tran = env.transition_prob()
 myIRL = IRL_LP(25,4,tran,pi.flatten(), 0.1,3,1.0)
 myIRL_rewards = myIRL.solve()
-plot_reward_surface(myIRL_rewards)
+
 
 
 #test recovered reward
+print("test recovered reward")
 env.reward_state = myIRL_rewards
 v = env.value_iteration(0.9)
 print(v)
 pi, pi_visual = env.generate_policy(v,0.9)
 print(pi)
 print(pi_visual)
+
+
+#render
+env.render()
+plot_reward_surface(myIRL_rewards)
 
 
 

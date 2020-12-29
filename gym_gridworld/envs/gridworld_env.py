@@ -56,8 +56,8 @@ class GridEnv(gym.Env):
 
 
     def reset(self):
-        self.goal_y = 0#self.grid_width-1
-        self.goal_x = self.grid_length-1
+        self.goal_y = self.grid_width-2
+        self.goal_x = self.grid_length-2
 
         self.reward_state = np.zeros((self.grid_width, self.grid_length))
         self.reward_state[self.goal_y][self.goal_x] = 1.0
