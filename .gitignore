@@ -1,2 +1,4 @@
 __pycache__/
 gym_gridworld.egg-info/
+gym_gridworld/__pycache__/
+gym_gridworld/env/__pycache__/
