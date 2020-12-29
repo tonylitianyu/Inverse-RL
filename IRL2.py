@@ -9,9 +9,10 @@ C_test = []
 
 class IRL_LP:
 
-    def __init__(self, state_size,action_size,transition, policy, gamma,l1=5.0, max_reward=1.0):
-
-        self.N_STATES = state_size
+    def __init__(self, grid_size ,action_size,transition, policy, gamma,l1=5.0, max_reward=1.0):
+        self.state_width = grid_size
+        self.state_length = grid_size
+        self.N_STATES = self.state_width*self.state_length #vertical X horizontal length
         self.N_ACTIONS = action_size
 
         self.p = transition
@@ -50,7 +51,7 @@ class IRL_LP:
         b4 = np.zeros((self.N_STATES,1))
 
         b5 = self.max_reward*np.ones((self.N_STATES,1))
-        b6 = np.zeros((self.N_STATES,1))#self.max_reward*np.ones((self.N_STATES,1))
+        b6 = self.max_reward*np.ones((self.N_STATES,1))
 
         b = np.vstack((b1,b2,b5,b6,b3,b4))
         # N_sub_optimal_action = self.N_ACTIONS-1
@@ -122,11 +123,7 @@ class IRL_LP:
 
         rewards = np.array(soln["x"][:self.N_STATES])
 
-        # rewards_norm = np.linalg.norm(rewards)
-        # rewards = np.array((rewards/rewards_norm))
 
-        with open('policy.npy', 'wb') as f:
-            np.save(f, self.policy)
 
-        return rewards.reshape((5,5))/max(rewards)
+        return rewards.reshape((self.state_width,self.state_length))/max(rewards)
 

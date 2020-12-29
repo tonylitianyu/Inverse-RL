@@ -5,10 +5,10 @@ import numpy as np
 #from IRL import IRL_LP
 from IRL2 import IRL_LP
 
-def plot_reward_surface(reward):
+def plot_reward_surface(reward, grid_size):
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    x = y = np.arange(0, 5, 1)
+    x = y = np.arange(0, grid_size, 1)
     X, Y = np.meshgrid(x, y)
     zs = reward
     Z = zs.reshape(X.shape)
@@ -39,7 +39,7 @@ print(pi_visual)
 
 #recover reward from IRL
 tran = env.transition_prob()
-myIRL = IRL_LP(25,4,tran,pi.flatten(), 0.1,3,1.0)
+myIRL = IRL_LP(env.grid_size,4,tran,pi.flatten(), 0.1,3,1.0)
 myIRL_rewards = myIRL.solve()
 
 
@@ -56,7 +56,7 @@ print(pi_visual)
 
 #render
 env.render()
-plot_reward_surface(myIRL_rewards)
+plot_reward_surface(myIRL_rewards, env.grid_size)
 
 
 

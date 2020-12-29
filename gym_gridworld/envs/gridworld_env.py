@@ -13,7 +13,7 @@ RIGHT = 3
 
 
 
-GRID_SIZE = 5
+GRID_SIZE = 10
 
 class GridEnv(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -23,8 +23,9 @@ class GridEnv(gym.Env):
         self.action_space = spaces.Discrete(4)
         self.action_grid_change = {UP:[-1,0],DOWN:[1,0], LEFT:[0,-1],RIGHT:[0,1]}
 
-        self.grid_width = 5   #verticle 
-        self.grid_length = 5    #horizontal
+        self.grid_size = GRID_SIZE
+        self.grid_width = self.grid_size     #verticle 
+        self.grid_length = self.grid_size    #horizontal
         self.state_space = spaces.Box(low=0, high=1, shape=[GRID_SIZE,GRID_SIZE,1])
 
         self.reset()
@@ -56,8 +57,8 @@ class GridEnv(gym.Env):
 
 
     def reset(self):
-        self.goal_y = self.grid_width-2
-        self.goal_x = self.grid_length-2
+        self.goal_y = 0
+        self.goal_x = self.grid_length-1
 
         self.reward_state = np.zeros((self.grid_width, self.grid_length))
         self.reward_state[self.goal_y][self.goal_x] = 1.0
