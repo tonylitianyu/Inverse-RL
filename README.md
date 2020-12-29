@@ -1,1 +1,1 @@
-# Inverse Reinforcement Learning
+# Inverse Reinforcement Learning with Linear Programming
