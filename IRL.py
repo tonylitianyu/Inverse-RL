@@ -1,4 +1,6 @@
 import numpy as np
+import sys
+np.set_printoptions(threshold=sys.maxsize)
 from cvxopt import matrix, solvers
 
 
@@ -6,28 +8,36 @@ from cvxopt import matrix, solvers
 
 class IRL_LP:
 
-    def __init__(self, env, gamma,l1=10.1, max_reward=1.0):
-        self.env = env
-        self.N_STATES = env.grid_size*env.grid_size
-        self.N_ACTIONS = len(env.action)
+    def __init__(self):
+        # self.env = env
+        # self.N_STATES = env.grid_size*env.grid_size
+        # self.N_ACTIONS = len(env.action)
 
-        self.p = np.ones((self.N_STATES,self.N_STATES, self.N_ACTIONS))#!!!!!!!!!!!!!!!!
-        self.build_transition_dynamics()
+        # self.p = np.ones((self.N_STATES, self.N_ACTIONS,self.N_STATES))#!!!!!!!!!!!!!!!!
+        # self.build_transition_dynamics()
 
-        self.policy = env.policy.flatten()
-        self.gamma = gamma
-        self.l1 = l1
-        self.max_reward = max_reward
+        # self.policy = env.policy.flatten()
+        # self.gamma = gamma
+        # self.l1 = l1
+        # self.max_reward = max_reward
 
+
+        self.A_test = []
+        self.B_test = []
+        self.C_test = []
 
     def build_transition_dynamics(self):
 
         for i in range(self.N_STATES):
-            for j in range(self.N_STATES):
-                for a in range(self.N_ACTIONS):
+            for a in range(self.N_ACTIONS):
+                for j in range(self.N_STATES):
+
                     iy, ix = self.flatToXY(i)
                     jy, jx = self.flatToXY(j)
-                    self.p[i][j][a] = self.env.transition_prob(iy,ix,a,jy,jx)
+                    self.p[i][a][j] = self.env.transition_prob(iy,ix,a,jy,jx)
+
+
+        print(self.p)
 
     def flatToXY(self, i):
         
@@ -48,7 +58,7 @@ class IRL_LP:
             c[j] = -self.l1
 
         c = -c
-
+        self.C_test = c
         return matrix(c),c
 
 
@@ -65,19 +75,20 @@ class IRL_LP:
 
         b = np.vstack((b1,b2,b3,b4,b5,b6))
 
+        self.B_test = b
         return matrix(b), b
 
     def build_A_mat(self):
-        print(self.policy)
-        print(self.p[0, :, self.policy[0]])
+
         T_array = []
         I_array = []
+        transition_p = np.transpose(self.p, (1, 0, 2))
         for i in range(self.N_STATES):
             for j in range(0,self.N_ACTIONS):
                 if j != self.policy[i]:
 
-                    pa1pa = self.p[i, :,self.policy[i]] - self.p[i, :, j]
-                    igammapa1 = np.linalg.inv(np.eye(self.N_STATES)- self.gamma*self.p[:,:,self.policy[i]])
+                    pa1pa = transition_p[self.policy[i],i] - transition_p[j,i]
+                    igammapa1 = np.linalg.inv(np.eye(self.N_STATES)- self.gamma*transition_p[self.policy[i]])
                     T = -np.dot(pa1pa, igammapa1)
                     T_array.append(T)
 
@@ -86,12 +97,15 @@ class IRL_LP:
                     I_array.append(I)
 
 
+
         T_s = np.vstack(T_array)
+
         I_s = np.eye(self.N_STATES)
 
         A_l = np.vstack([T_s, T_s, -I_s, I_s, -I_s, I_s])
 
         I_suboptimal = np.vstack(I_array)
+
 
 
         A_m_zero_top = np.zeros((self.N_STATES*(self.N_ACTIONS-1), self.N_STATES))
@@ -104,6 +118,8 @@ class IRL_LP:
         A = np.hstack([A_l, A_m, A_r])
 
 
+        self.A_test = A
+
         return matrix(A), A
 
 
@@ -113,21 +129,18 @@ class IRL_LP:
         A_mat,A = self.build_A_mat()
         b_mat,b = self.build_b_mat()
         c_mat,c = self.build_c_mat()
-        #print(A_mat)
+        print(c)
 
         soln = solvers.lp(c_mat, A_mat, b_mat)
         
 
         rewards = np.array(soln["x"][:self.N_STATES])
 
-        rewards_norm = np.linalg.norm(rewards)
-        rewards = np.array((rewards/rewards_norm)*self.max_reward)
+        # rewards_norm = np.linalg.norm(rewards)
+        # rewards = np.array((rewards/rewards_norm))
 
 
-        return rewards.reshape((4,4))
-
-
-
+        return (rewards/max(rewards)).reshape((5,5))
 
 
 

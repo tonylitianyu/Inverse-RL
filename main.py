@@ -2,59 +2,58 @@ import gym
 import gym_gridworld
 import matplotlib.pyplot as plt
 import numpy as np
-from IRL import IRL_LP
+#from IRL import IRL_LP
+from IRL2 import IRL_LP
 
-def get_reward_arr(env):
-    r = np.zeros((4,4))
-    for i in range(len(r)):
-        for j in range(len(r[0])):
-            r_val = env.get_reward([i,j])
-            r[i][j] = r_val
+def plot_reward_surface(reward):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    x = y = np.arange(0, 5, 1)
+    X, Y = np.meshgrid(x, y)
+    zs = reward
+    Z = zs.reshape(X.shape)
+    ax.view_init(45, 135)
+    ax.plot_surface(X, Y, Z,alpha=0.5,cmap='jet', rstride=1, cstride=1, edgecolors='k', lw=1)
 
-    return r
+    ax.set_xlabel('X Axis')
+    ax.set_ylabel('Y Axis')
+    ax.set_zlabel('Reward Values')
 
-def draw_3d_hist(data):
-    data_arr = np.array(data)
-    fig = plt.figure(1)
-    ax = fig.add_subplot(111,projection='3d')
-    x_data,y_data = np.meshgrid(np.arange(data_arr.shape[1]), np.arange(data_arr.shape[0]))
-    x_data = x_data.flatten()
-    y_data = y_data.flatten()
-    z_data = data_arr.flatten()
-    ax.bar3d(x_data,y_data,np.zeros(len(z_data)),1,1,z_data)
-    plt.ylim(max(y_data)+1, 0)
     plt.show()
+
+
 
 
 env = gym.make('gridworld-v0')
 env.visual = True
 env.render()
-print(env.policy)
 
+#optimal policy calculated by value iteration
 v = env.value_iteration(0.9)
-pi = env.generate_policy(v,0.9)
+print(v)
+pi, pi_visual = env.generate_policy(v,0.9)
 print(pi)
-
-# print(v)
-#r_data = get_reward_arr(env)
-#draw_3d_hist(r_data)
-
-irl = IRL_LP(env,0.9)
-irl_result = irl.solve()
-print(irl_result)
-draw_3d_hist(irl_result)
+print(pi_visual)
 
 
-for i in range(1):
-    
-    action = env.policy[env.agent_pos[0]][env.agent_pos[1]]#env.get_keyboard_action(input())#env.action_space.sample()
-    new_state, reward, done = env.step(action)
 
-    env.render()
+tran = env.transition_prob()
+myIRL = IRL_LP(25,4,tran,pi.flatten(), 0.1,3,1.0)
+myIRL_rewards = myIRL.solve()
+plot_reward_surface(myIRL_rewards)
 
-    if done:
-        print(reward)
-        break
+
+#test recovered reward
+env.reward_state = myIRL_rewards
+v = env.value_iteration(0.9)
+print(v)
+pi, pi_visual = env.generate_policy(v,0.9)
+print(pi)
+print(pi_visual)
+
+
+
+
 
 
 
