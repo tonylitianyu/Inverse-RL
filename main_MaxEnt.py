@@ -2,30 +2,19 @@ import gym
 import gym_gridworld
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-import torch.utils.data
-from torch import nn, optim
-from torch.nn import functional as F
+
 from IRL_MaxEnt import IRL_MaxEnt, RewardNet
 
 
 
+env = gym.make('gridworld-v0')
+env.visual = True
 
-if torch.cuda.is_available():
-    device = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
-    print("Running on the GPU")
-    torch.cuda.empty_cache()
-else:
-    device = torch.device("cpu")
-    print("Running on the CPU")
+tran = env.transition_prob()
+reward_table = env.reward_state.flatten()
+#print(reward_table)
 
+irl_agent = IRL_MaxEnt(0,1,env.grid_size**2,4,tran,0.9)
 
-n_features = 1
-
-
-
-r_model = RewardNet(n_features, 64).to(device)
-optimizer = optim.Adam(r_model.parameters(), lr=0.01)
-
-
-
+v = irl_agent.approx_value_iteration(reward_table)
+print(v.reshape((env.grid_size,env.grid_size)))

@@ -13,7 +13,7 @@ RIGHT = 3
 
 
 
-GRID_SIZE = 20
+GRID_SIZE = 5
 
 class GridEnv(gym.Env):
     metadata = {'render.modes': ['human']}
