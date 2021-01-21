@@ -52,7 +52,21 @@ class IRL_MaxEnt:
         self.optimizer = optim.Adam(self.r_model.parameters(), lr=0.01)
 
 
+    
     def approx_value_iteration(self, curr_reward_table):
+        '''Algorithm 2 Approximate Value Iteration in the paper
+            Args:
+                curr_reward_table (list) - current reward table from the neural net (will be delete)
+            Returns:
+                best_policy (list) - best "next state" index for each state
+        '''
+        value_table = self.find_value_table(curr_reward_table)
+        best_policy = self.find_policy(value_table, curr_reward_table)
+
+        return best_policy
+
+
+    def find_value_table(self, curr_reward_table):
         V = np.zeros(self.n_states)
         V_res = np.zeros(self.n_states)
         eps = 0.001
@@ -85,7 +99,33 @@ class IRL_MaxEnt:
             if delta < eps:
                 break
 
-        return V
+        return V_res
+
+
+    def find_policy(self, value_table, curr_reward_table):
+        opti_policy = np.zeros(self.n_states)
+        for i in range(0,self.n_states):
+            curr_reward = curr_reward_table[i]
+            next_best_dic = {}
+            for k in range(0,self.n_actions):
+                next_s = self.transition[i,k,:]
+                for j in range(0, len(next_s)):
+                    if next_s[j] > 0.0:
+                        value = curr_reward+self.gamma*value_table[j]
+                        next_best_dic[j] = value
+
+            next_best_state = max(next_best_dic, key=next_best_dic.get)
+            opti_policy[i] = next_best_state
+
+        return opti_policy
+
+
+    def policy_propagation(self, best_policy):
+        
+
+
+
+            
 
 
 
