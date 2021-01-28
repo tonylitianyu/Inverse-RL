@@ -61,9 +61,8 @@ class IRL_MaxEnt:
                 best_policy (list) - best "next state" index for each state
         '''
         value_table = self.find_value_table(curr_reward_table)
-        best_policy = self.find_policy(value_table, curr_reward_table)
+        return self.find_policy(value_table, curr_reward_table)
 
-        return best_policy
 
 
     def find_value_table(self, curr_reward_table):
@@ -103,7 +102,8 @@ class IRL_MaxEnt:
 
 
     def find_policy(self, value_table, curr_reward_table):
-        opti_policy = np.zeros(self.n_states)
+        opti_policy_state = np.zeros(self.n_states, dtype=int)
+        opti_policy_action = np.zeros(self.n_states, dtype=int)
         for i in range(0,self.n_states):
             curr_reward = curr_reward_table[i]
             next_best_dic = {}
@@ -112,15 +112,41 @@ class IRL_MaxEnt:
                 for j in range(0, len(next_s)):
                     if next_s[j] > 0.0:
                         value = curr_reward+self.gamma*value_table[j]
-                        next_best_dic[j] = value
+                        next_best_dic[(k,j)] = value
 
-            next_best_state = max(next_best_dic, key=next_best_dic.get)
-            opti_policy[i] = next_best_state
+            next_best = max(next_best_dic, key=next_best_dic.get) #(action, next_state)
+            opti_policy_action[i] = next_best[0]
+            opti_policy_state[i] = next_best[1]
+            
 
-        return opti_policy
+        return opti_policy_action, opti_policy_state
 
 
-    def policy_propagation(self, best_policy):
+    def policy_propagation(self, policy_action, expert_traj, max_step, goal_idx):
+
+        E = np.zeros((self.n_states, max_step))
+        for i in expert_traj:
+            E[i[0]][0] = 1
+
+        # for k in range(0,self.n_states):
+        #     E[k][0] = E[k][0]/len(expert_traj) 
+        
+        #print(E)
+
+        for t in range(0, max_step-1):
+            for s in range(self.n_states):
+                    #E[s, t] = sum([E[pre_s, t - 1] * self.transition[pre_s, policy_action[pre_s], s] for pre_s in range(self.n_states)])
+
+                for next_s in range(self.n_states):
+                    E[next_s][t+1] += E[s][t]*self.transition[s, policy_action[s], next_s]
+
+        state_visit_feq = np.sum(E,1)
+        return state_visit_feq
+
+
+
+
+
         
 
 
