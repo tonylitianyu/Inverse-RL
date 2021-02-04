@@ -3,6 +3,7 @@ import torch
 import torch.utils.data
 from torch import nn, optim
 from torch.nn import functional
+from torch.autograd import Variable
 
 
 if torch.cuda.is_available():
@@ -34,12 +35,16 @@ class RewardNet(nn.Module):
         reward = functional.relu(self.fc3(h2))
         return reward
 
+    def lossFunction(self, expert_freq, curr_policy_freq):
+        return (expert_freq - curr_policy_freq).view(-1,1)
+
+
 
     
 
 class IRL_MaxEnt:
-    def __init__(self, expert_state_freq, n_features, n_states, n_actions, transition, gamma):
-        self.expert_state_freq = expert_state_freq
+    def __init__(self, n_features, n_states, n_actions, transition, gamma):
+
         self.n_features = n_features
         self.n_states = n_states
         self.n_actions = n_actions
@@ -51,7 +56,14 @@ class IRL_MaxEnt:
         self.r_model = RewardNet(n_features, 64).to(device)
         self.optimizer = optim.Adam(self.r_model.parameters(), lr=0.01)
 
+    def initialize_training_episode(self):
+        self.optimizer.zero_grad()
+        
+        state_tensor = torch.from_numpy(np.arange(25)).type(torch.FloatTensor)
+        state_tensor = state_tensor.view(-1,1).to(device)
+        curr_reward_table = self.r_model(state_tensor)
 
+        return curr_reward_table
     
     def approx_value_iteration(self, curr_reward_table):
         '''Algorithm 2 Approximate Value Iteration in the paper
@@ -128,14 +140,8 @@ class IRL_MaxEnt:
         for i in expert_traj:
             E[i[0]][0] = 1
 
-        # for k in range(0,self.n_states):
-        #     E[k][0] = E[k][0]/len(expert_traj) 
-        
-        #print(E)
-
         for t in range(0, max_step-1):
             for s in range(self.n_states):
-                    #E[s, t] = sum([E[pre_s, t - 1] * self.transition[pre_s, policy_action[pre_s], s] for pre_s in range(self.n_states)])
 
                 for next_s in range(self.n_states):
                     E[next_s][t+1] += E[s][t]*self.transition[s, policy_action[s], next_s]
@@ -143,6 +149,33 @@ class IRL_MaxEnt:
         state_visit_feq = np.sum(E,1)
         return state_visit_feq
 
+
+
+    
+    def expert_state_freq(self,expert_traj):
+        uD = np.zeros(self.n_states)
+
+        for traj in expert_traj:
+            for t in traj:
+                uD[t] += 1
+
+        uD /= len(expert_traj)
+
+
+        return uD
+
+    def train_network(self, expert_freq, curr_policy_freq):
+        expert_freq = torch.from_numpy(expert_freq)
+        curr_policy_freq = torch.from_numpy(curr_policy_freq)
+
+        loss = self.r_model.lossFunction(expert_freq, curr_policy_freq)
+        loss.requires_grad = True
+        
+    
+        loss.backward(torch.ones_like(loss))
+        self.optimizer.step()
+        torch.cuda.memory_allocated()
+        torch.cuda.memory_reserved()
 
 
 
