@@ -46,14 +46,13 @@ max_traj_step = 8
 expert_demo = generate_expert_demo(env.grid_size**2, 9, expert_policy_state, n_traj, max_traj_step)
 
 
-print(expert_demo)
 
 
 ####Training
 
 for i in range(0,10):
     curr_reward_table = irl_agent.initialize_training_episode()
-    print(curr_reward_table.reshape((5,5)))
+    #print(curr_reward_table.reshape((5,5)))
 
     policy_action, policy_state = irl_agent.approx_value_iteration(curr_reward_table)
     #print(policy_action.reshape((env.grid_size,env.grid_size)))
@@ -61,12 +60,14 @@ for i in range(0,10):
     
     #print(expert_demo)
     svf = irl_agent.policy_propagation(policy_action, expert_demo, max_traj_step,9)
-    print(svf)
+
 
     #Determine Maximum Entropy Loss and Gradients
     expert_freq = irl_agent.expert_state_freq(expert_demo)
 
-    irl_agent.train_network(expert_freq, svf)
+    #print(svf)
+
+    irl_agent.train_network(expert_freq, svf, curr_reward_table)
 
 
 

@@ -35,7 +35,7 @@ class RewardNet(nn.Module):
         reward = functional.relu(self.fc3(h2))
         return reward
 
-    def lossFunction(self, expert_freq, curr_policy_freq):
+    def get_gradient(self, expert_freq, curr_policy_freq):
         return (expert_freq - curr_policy_freq).view(-1,1)
 
 
@@ -55,6 +55,8 @@ class IRL_MaxEnt:
 
         self.r_model = RewardNet(n_features, 64).to(device)
         self.optimizer = optim.Adam(self.r_model.parameters(), lr=0.01)
+
+
 
     def initialize_training_episode(self):
         self.optimizer.zero_grad()
@@ -140,6 +142,8 @@ class IRL_MaxEnt:
         for i in expert_traj:
             E[i[0]][0] = 1
 
+        E[:,0] /= len(expert_traj)
+
         for t in range(0, max_step-1):
             for s in range(self.n_states):
 
@@ -147,6 +151,7 @@ class IRL_MaxEnt:
                     E[next_s][t+1] += E[s][t]*self.transition[s, policy_action[s], next_s]
 
         state_visit_feq = np.sum(E,1)
+
         return state_visit_feq
 
 
@@ -164,18 +169,21 @@ class IRL_MaxEnt:
 
         return uD
 
-    def train_network(self, expert_freq, curr_policy_freq):
+    def train_network(self, expert_freq, curr_policy_freq, curr_reward_table):
         expert_freq = torch.from_numpy(expert_freq)
         curr_policy_freq = torch.from_numpy(curr_policy_freq)
 
-        loss = self.r_model.lossFunction(expert_freq, curr_policy_freq)
-        loss.requires_grad = True
+        r_gradient = self.r_model.get_gradient(expert_freq, curr_policy_freq).to(device)
+        #print(r_gradient)
+
+        #curr_reward_table.grad = -r_gradient.to(dtype=torch.float32).to(device)
         
-    
-        loss.backward(torch.ones_like(loss))
+        curr_reward_table.backward(r_gradient)
+        
+
         self.optimizer.step()
-        torch.cuda.memory_allocated()
-        torch.cuda.memory_reserved()
+        # torch.cuda.memory_allocated()
+        # torch.cuda.memory_reserved()
 
 
 
