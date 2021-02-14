@@ -30,9 +30,9 @@ class RewardNet(nn.Module):
 
 
     def forward(self, input):
-        h1 = functional.relu(self.fc1(input))
-        h2 = functional.relu(self.fc2(h1))
-        reward = functional.relu(self.fc3(h2))
+        h1 = self.fc1(input)
+        h2 = self.fc2(h1)
+        reward = self.fc3(h2)
         return reward
 
     def get_gradient(self, expert_freq, curr_policy_freq):
@@ -52,6 +52,8 @@ class IRL_MaxEnt:
         
         self.gamma = gamma
 
+        self.state_tensor = torch.arange(self.n_states).type(torch.FloatTensor)
+        self.state_tensor = self.state_tensor.view(-1,1).to(device)
 
         self.r_model = RewardNet(n_features, 64).to(device)
         self.optimizer = optim.Adam(self.r_model.parameters(), lr=0.01)
@@ -60,12 +62,10 @@ class IRL_MaxEnt:
 
     def initialize_training_episode(self):
         self.optimizer.zero_grad()
-        
-        state_tensor = torch.from_numpy(np.arange(25)).type(torch.FloatTensor)
-        state_tensor = state_tensor.view(-1,1).to(device)
-        curr_reward_table = self.r_model(state_tensor)
+        self.curr_reward_table = self.r_model(self.state_tensor)
 
-        return curr_reward_table
+
+        return self.curr_reward_table
     
     def approx_value_iteration(self, curr_reward_table):
         '''Algorithm 2 Approximate Value Iteration in the paper
@@ -169,21 +169,48 @@ class IRL_MaxEnt:
 
         return uD
 
-    def train_network(self, expert_freq, curr_policy_freq, curr_reward_table):
+    def train_network(self, expert_freq, curr_policy_freq):
+
+
         expert_freq = torch.from_numpy(expert_freq)
         curr_policy_freq = torch.from_numpy(curr_policy_freq)
 
         r_gradient = self.r_model.get_gradient(expert_freq, curr_policy_freq).to(device)
-        #print(r_gradient)
+        # self.curr_reward_table.retain_grad()
+        # print(r_gradient)
+        # self.curr_reward_table.grad = -r_gradient.to(dtype=torch.float32).to(device)
 
-        #curr_reward_table.grad = -r_gradient.to(dtype=torch.float32).to(device)
         
-        curr_reward_table.backward(r_gradient)
-        
+        # #self.curr_reward_table.backward(gradient=r_gradient.to(dtype=torch.float32).to(device))
 
+        torch.nn.utils.clip_grad_norm_(self.r_model.parameters(), 100)
+        
+        # print(self.curr_reward_table.grad)
+        
+        # self.curr_reward_table.backward(torch.ones_like(r_gradient))
+
+        # for i in range(self.n_states):
+        #     input = i*torch.ones(1).to(device)
+        #     print(input)
+        #     temp_r = self.r_model(input)
+        #     temp_r.backward(-r_gradient[i])
+        #     self.optimizer.step()
+
+
+
+        #self.curr_reward_table.grad = -r_gradient.to(dtype=torch.float32).to(device)
+        #self.curr_reward_table.backward(gradient=-r_gradient.to(dtype=torch.float32).to(device))
+
+        self.curr_reward_table.backward(-r_gradient.to(dtype=torch.float32).to(device))
         self.optimizer.step()
-        # torch.cuda.memory_allocated()
-        # torch.cuda.memory_reserved()
+
+
+    def print_final_reward_table(self):
+        print(self.curr_reward_table.reshape((5,5))/torch.max(self.curr_reward_table))
+
+
+
+
 
 
 

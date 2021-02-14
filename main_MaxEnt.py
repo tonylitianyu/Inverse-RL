@@ -43,16 +43,16 @@ def generate_expert_demo(n_state, goal_idx, policy, n_traj, max_step):
 #generate expert demonstration trajectory with same length
 n_traj = 15
 max_traj_step = 8
-expert_demo = generate_expert_demo(env.grid_size**2, 9, expert_policy_state, n_traj, max_traj_step)
+expert_demo = generate_expert_demo(env.grid_size**2, 0, expert_policy_state, n_traj, max_traj_step)
 
 
 
 
 ####Training
 
-for i in range(0,10):
+for i in range(0,500):
     curr_reward_table = irl_agent.initialize_training_episode()
-    #print(curr_reward_table.reshape((5,5)))
+
 
     policy_action, policy_state = irl_agent.approx_value_iteration(curr_reward_table)
     #print(policy_action.reshape((env.grid_size,env.grid_size)))
@@ -67,7 +67,9 @@ for i in range(0,10):
 
     #print(svf)
 
-    irl_agent.train_network(expert_freq, svf, curr_reward_table)
+    irl_agent.train_network(expert_freq, svf)
+
+irl_agent.print_final_reward_table()
 
 
 
