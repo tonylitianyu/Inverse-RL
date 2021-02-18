@@ -13,20 +13,21 @@ RIGHT = 3
 
 
 
-GRID_SIZE = 5
+
 
 class GridEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self):
+    def __init__(self, grid_size=5, goal_idx=0):
         self.action = [UP, DOWN, LEFT, RIGHT]
         self.action_space = spaces.Discrete(4)
         self.action_grid_change = {UP:[-1,0],DOWN:[1,0], LEFT:[0,-1],RIGHT:[0,1]}
 
-        self.grid_size = GRID_SIZE
+        self.grid_size = grid_size
         self.grid_width = self.grid_size     #verticle 
         self.grid_length = self.grid_size    #horizontal
-        self.state_space = spaces.Box(low=0, high=1, shape=[GRID_SIZE,GRID_SIZE,1])
+        self.state_space = spaces.Box(low=0, high=1, shape=[grid_size,grid_size,1])
+        self.goal_idx = goal_idx
 
         self.reset()
         
@@ -55,10 +56,16 @@ class GridEnv(gym.Env):
         self.visual_space[self.curr_y][self.curr_x] = 1
         self.visual_space[self.goal_y][self.goal_x] = 2
 
+    def idx_to_xy(self, idx):
+        x = idx % self.grid_size
+        y = int(idx/self.grid_size)
+
+        return x, y
+
 
     def reset(self):
-        self.goal_y = 0#1
-        self.goal_x = 0#self.grid_length-1
+        
+        self.goal_x, self.goal_y = self.idx_to_xy(self.goal_idx)
 
         self.reward_state = np.zeros((self.grid_width, self.grid_length))
         self.reward_state[self.goal_y][self.goal_x] = 1.0
@@ -201,10 +208,10 @@ class GridEnv(gym.Env):
 
 
 
-        return np.array(opti_policy, dtype=int), self.visualize_policy(opti_policy)
+        return np.array(opti_policy, dtype=int), self.visualize_policy(opti_policy, self.grid_width, self.grid_length)
 
-    def visualize_policy(self, policy):
-        visual_policy = np.empty((self.grid_width,self.grid_length)).astype('U')
+    def visualize_policy(self, policy, grid_width, grid_length):
+        visual_policy = np.empty((grid_width,grid_length)).astype('U')
         for i in range(0,len(policy)):
             for j in range(0,len(policy[0])):
                 if policy[i][j] == UP:

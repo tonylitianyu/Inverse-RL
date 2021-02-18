@@ -4,3 +4,5 @@ gym_gridworld/__pycache__/
 gym_gridworld/env/__pycache__/
 function_approx.py
 main_fa.py
+IRL_MaxEnt_c.py
+main_MaxEnt_c.py
