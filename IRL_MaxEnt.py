@@ -8,6 +8,7 @@ from torch.autograd import Variable
 
 
 
+
 if torch.cuda.is_available():
     device = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
     print("Running on the GPU")
@@ -49,16 +50,33 @@ class IRL_MaxEnt:
 
         self.n_features = n_features
         self.n_states = n_states
+        self.n_side_length = int(math.sqrt(self.n_states))
         self.n_actions = n_actions
         self.transition = np.transpose(transition,(0,2,1)) #(state, action, state)
         
         self.gamma = gamma
 
 
-        self.feat_map = np.eye(self.n_states)
+        #self.feat_map = np.eye(self.n_states)
+
+
+        self.feat_map = np.zeros((self.n_states, self.n_side_length*2))
+        j = 0
+        k = 0
+        for i in range(0, self.n_states):
+            self.feat_map[i][j] = 1
+            self.feat_map[i][k+self.n_side_length] = 1
+            j += 1
+            j %= self.n_side_length
+            if j == 0:
+                k += 1
+
+
+
+
         self.feat_map = torch.from_numpy(self.feat_map).type(torch.FloatTensor).to(device)
 
-        self.r_model = RewardNet(self.n_features, 64).to(device)
+        self.r_model = RewardNet(self.n_side_length*2, 64).to(device)
         self.optimizer = optim.Adagrad(self.r_model.parameters(), lr=0.01, weight_decay=1e-4)
 
 

@@ -3,10 +3,15 @@ import gym_gridworld
 import matplotlib.pyplot as plt
 import numpy as np
 import random
+import time
 from IRL_MaxEnt import IRL_MaxEnt, RewardNet
 
+
+
 grid_side_length = 30
-goal_idx = 55
+goal_idx = 0
+n_traj = 1
+n_episode = 10
 
 env = gym.make('gridworld-v0', grid_size = grid_side_length, goal_idx = goal_idx)
 env.visual = True
@@ -42,7 +47,6 @@ def generate_expert_demo(n_state, goal_idx, policy, n_traj, max_step):
     return all_demo_trajs
 
 #generate expert demonstration trajectory with same length
-n_traj = 30
 max_traj_step = env.grid_size*2
 expert_demo = generate_expert_demo(env.grid_size**2, goal_idx, expert_policy_state, n_traj, max_traj_step)
 print(expert_demo)
@@ -52,7 +56,9 @@ print(expert_demo)
 
 ####Training
 
-for i in range(0,50):
+start = time.time()
+
+for i in range(0,n_episode):
     curr_reward_table = irl_agent.initialize_training_episode()
     irl_agent.print_episode_info(i)
 
@@ -82,7 +88,8 @@ print(env.visualize_policy(policy_action.reshape(env.grid_size, env.grid_size), 
 
 
 
-
+end = time.time()
+print("Total training time: "+ str(end - start))
 
 
 
