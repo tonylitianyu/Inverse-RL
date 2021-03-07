@@ -8,10 +8,10 @@ from IRL_MaxEnt import IRL_MaxEnt, RewardNet
 
 
 
-grid_side_length = 30
-goal_idx = 0
+grid_side_length = 10
+goal_idx = 40
 n_traj = 1
-n_episode = 10
+n_episode = 30
 
 env = gym.make('gridworld-v0', grid_size = grid_side_length, goal_idx = goal_idx)
 env.visual = True
