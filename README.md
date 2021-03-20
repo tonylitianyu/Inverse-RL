@@ -1,4 +1,5 @@
 # Inverse Reinforcement Learning
+2021 Winter Project by Tianyu Li
 
 This repo contains implementation of the following papers on inverse reinforcement learning. The purpose is to achieve robot learning from demonstration via inverse reinforcement learning.
 
@@ -30,7 +31,7 @@ For 3D Environment with discretized (x,y,z,gripper) states
 python3 main_Gripper3d.py
 ```
 
-For simulation of the policy in pybullet. The models are saved in ```trained_model``` folder
+For visualization of the policy in pybullet. The models are saved in ```trained_model``` folder
 ```
 python3 simulation.py
 ```
