@@ -8,8 +8,8 @@ from IRL_MaxEnt import IRL_MaxEnt, RewardNet
 
 
 
-grid_side_length = 10
-goal_idx = 40
+grid_side_length = 3
+goal_idx = 1
 n_traj = 1
 n_episode = 30
 
@@ -49,6 +49,7 @@ def generate_expert_demo(n_state, goal_idx, policy, n_traj, max_step):
 #generate expert demonstration trajectory with same length
 max_traj_step = env.grid_size*2
 expert_demo = generate_expert_demo(env.grid_size**2, goal_idx, expert_policy_state, n_traj, max_traj_step)
+#expert_demo = [[7, 6, 3, 0, 1, 1, 1]]
 print(expert_demo)
 
 
@@ -73,7 +74,7 @@ for i in range(0,n_episode):
 
     #Determine Maximum Entropy Loss and Gradients
     expert_freq = irl_agent.expert_state_freq(expert_demo)
-
+    #print(expert_freq)
     #print(svf)
 
     irl_agent.train_network(expert_freq, svf)
